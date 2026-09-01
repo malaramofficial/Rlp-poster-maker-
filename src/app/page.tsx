@@ -1,61 +1,114 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ArrowLeft, Download, ImagePlus, Sparkles, Upload, Users } from 'lucide-react';
+import { ArrowLeft, Download, ImagePlus, Sparkles, Upload, Users, Layers } from 'lucide-react';
 
-type Template={id:string;title:string;subtitle:string;tag:string};
+type Template={id:string;title:string;kicker:string};
 const templates:Template[]=[
- {id:'youth',title:'युवा साथियों का स्वागत',subtitle:'RLP युवा साथी • स्वागत एवं अभिनंदन',tag:'YOUTH'},
- {id:'meeting',title:'जनसभा एवं कार्यक्रम',subtitle:'कार्यक्रम की सूचना • आपका स्वागत है',tag:'EVENT'},
- {id:'birthday',title:'जन्मदिन की शुभकामनाएं',subtitle:'हार्दिक बधाई एवं शुभकामनाएं',tag:'WISH'},
- {id:'leader',title:'नेतृत्व संदेश',subtitle:'जनहित • युवा शक्ति • जनआवाज़',tag:'LEADER'}
+ {id:'welcome',title:'RLP युवा साथी स्वागत',kicker:'आपका हार्दिक अभिनंदन'},
+ {id:'meeting',title:'जनसभा / कार्यक्रम',kicker:'जनहित की आवाज • आपका स्वागत'}
 ];
 
 export default function Home(){
  const [selected,setSelected]=useState<Template|null>(null);
  const [name,setName]=useState(''); const [role,setRole]=useState('RLP युवा साथी');
- const [place,setPlace]=useState(''); const [phone,setPhone]=useState('');
+ const [place,setPlace]=useState('ग्राम पंचायत'); const [phone,setPhone]=useState('');
  const [photo,setPhoto]=useState(''); const [leader,setLeader]=useState('');
  const [out,setOut]=useState(''); const [loading,setLoading]=useState(false);
  const canvas=useRef<HTMLCanvasElement>(null);
 
  const pick=(setter:(v:string)=>void,file?:File)=>{if(!file)return;const r=new FileReader();r.onload=()=>setter(String(r.result));r.readAsDataURL(file)};
- const cover=(ctx:CanvasRenderingContext2D,img:HTMLImageElement,x:number,y:number,w:number,h:number)=>{const s=Math.max(w/img.width,h/img.height);const iw=img.width*s,ih=img.height*s;ctx.drawImage(img,x+(w-iw)/2,y+(h-ih)/2,iw,ih)};
+ const fit=(ctx:CanvasRenderingContext2D,img:HTMLImageElement,x:number,y:number,w:number,h:number,align='center')=>{
+  const s=Math.max(w/img.width,h/img.height),iw=img.width*s,ih=img.height*s;
+  const dx=align==='right'?x+w-iw:align==='left'?x:x+(w-iw)/2;
+  ctx.drawImage(img,dx,y+(h-ih)/2,iw,ih);
+ };
+ const text=(ctx:CanvasRenderingContext2D,t:string,x:number,y:number,size:number,color='#fff',align:CanvasTextAlign='left')=>{
+  ctx.fillStyle=color;ctx.textAlign=align;ctx.font='900 '+size+'px Arial';ctx.fillText(t,x,y);
+ };
+ const line=(ctx:CanvasRenderingContext2D,x1:number,y1:number,x2:number,y2:number,color:string,w:number)=>{
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+ };
+ const drawBrush=(ctx:CanvasRenderingContext2D)=>{
+  ctx.save();ctx.globalAlpha=.95;ctx.strokeStyle='#7eb800';ctx.lineCap='square';
+  for(let i=0;i<12;i++){ctx.lineWidth=18+i*3;ctx.beginPath();ctx.moveTo(690+i*16,250+i*10);ctx.lineTo(1080,80+i*28);ctx.stroke()}
+  ctx.globalAlpha=.22;ctx.strokeStyle='#d9ff37';
+  for(let i=0;i<6;i++){ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(630+i*38,175);ctx.lineTo(1080,410+i*30);ctx.stroke()}ctx.restore();
+ };
  const generate=()=>{
-  if(!selected||!name.trim()) return alert('कृपया अपना नाम भरें');
+  if(!selected||!name.trim())return alert('अपना नाम भरें');
   setLoading(true);
-  const c=canvas.current!; c.width=1080;c.height=1350;const ctx=c.getContext('2d')!;
-  const g=ctx.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#061c0b');g.addColorStop(.55,'#092b10');g.addColorStop(1,'#f7c928');ctx.fillStyle=g;ctx.fillRect(0,0,1080,1350);
-  ctx.fillStyle='#76b900';ctx.globalAlpha=.75;ctx.beginPath();ctx.moveTo(650,0);ctx.lineTo(1080,0);ctx.lineTo(1080,760);ctx.lineTo(760,560);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
-  ctx.fillStyle='#fff';ctx.fillRect(34,34,170,170);ctx.strokeStyle='#f4c400';ctx.lineWidth=10;ctx.strokeRect(34,34,170,170);
-  ctx.fillStyle='#0b3113';ctx.textAlign='center';ctx.font='bold 26px Arial';ctx.fillText('RLP',119,135);ctx.font='18px Arial';ctx.fillText('युवा साथी',119,165);
-  ctx.textAlign='left';ctx.fillStyle='#fff';ctx.font='bold 36px Arial';ctx.fillText('राष्ट्रीय लोकतांत्रिक पार्टी',230,72);ctx.font='bold 48px Arial';ctx.fillStyle='#f7d21f';ctx.fillText('RLP',230,132);ctx.fillStyle='#fff';ctx.font='bold 28px Arial';ctx.fillText(selected.subtitle,230,178);
-  ctx.fillStyle='#fff';ctx.font='bold 78px Arial';ctx.fillText('आपका',45,355);ctx.fillStyle='#ffd42a';ctx.font='bold 104px Arial';ctx.fillText(selected.title.split(' ').slice(0,2).join(' '),45,475);
-  ctx.fillStyle='#fff';ctx.font='bold 70px Arial';ctx.fillText('सादर स्वागत',45,555);
-  const drawAll=()=>{
-    ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(0,900,1080,450);ctx.fillStyle='#ffd42a';ctx.fillRect(0,900,1080,210);
-    ctx.fillStyle='#6b2400';ctx.textAlign='center';ctx.font='bold 78px Arial';ctx.fillText(name,540,1015);
-    ctx.fillStyle='#0b3113';ctx.font='bold 34px Arial';ctx.fillText(role||'RLP युवा साथी',540,1070);
-    ctx.fillStyle='#fff';ctx.font='bold 30px Arial';ctx.fillText(place,540,1170);ctx.font='bold 42px Arial';ctx.fillText(phone,540,1245);
-    ctx.fillStyle='#06200b';ctx.fillRect(0,1285,1080,65);ctx.fillStyle='#ffd42a';ctx.font='bold 24px Arial';ctx.fillText('राष्ट्रीय लोकतांत्रिक पार्टी (RLP)  •  चुनाव चिन्ह - बोतल',540,1328);
-    setOut(c.toDataURL('image/png'));setLoading(false);
-  };
+  const c=canvas.current!,ctx=c.getContext('2d')!;c.width=1080;c.height=1350;
+  // LAYER 1: dark green base
+  ctx.fillStyle='#031a0a';ctx.fillRect(0,0,1080,1350);
+  ctx.fillStyle='#06240d';ctx.fillRect(0,0,1080,900);
+  // LAYER 2: top identity block
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(116,110,82,0,Math.PI*2);ctx.fill();
+  ctx.lineWidth=11;ctx.strokeStyle='#e7c51d';ctx.beginPath();ctx.arc(116,110,82,Math.PI*.55,Math.PI*1.55);ctx.stroke();
+  ctx.strokeStyle='#3b7c2c';ctx.beginPath();ctx.arc(116,110,82,Math.PI*1.55,Math.PI*2.45);ctx.stroke();
+  ctx.fillStyle='#102b15';ctx.fillRect(91,57,50,105);ctx.fillStyle='#fff';ctx.fillRect(101,69,30,78);
+  text(ctx,'राष्ट्रीय लोकतांत्रिक पार्टी',210,72,31,'#f2f2e9');text(ctx,'RLP',210,124,52,'#ffd226');
+  text(ctx,selected.kicker,210,170,27,'#f2f2e9');
+  // LAYER 3: brush background
+  drawBrush(ctx);
+  // LAYER 4: bold welcome typography on left
+  text(ctx,'आपका',42,340,78,'#f5f5ef');
+  text(ctx,'हार्दिक',42,450,104,'#ffd326');
+  text(ctx,'अभिनंदन',42,540,68,'#f5f5ef');
+  line(ctx,42,575,340,575,'#e3bd25',4);ctx.fillStyle='#e3bd25';ctx.beginPath();ctx.arc(350,575,8,0,7);ctx.fill();ctx.beginPath();ctx.arc(375,575,8,0,7);ctx.fill();
+  text(ctx,'जय जवान  जय किसान',42,635,30,'#f4f4ed');
+  // LAYER 5: leader cutout zone (behind user)
   const drawUser=()=>{
-   if(photo){const im=new Image();im.onload=()=>{ctx.save();ctx.beginPath();ctx.arc(380,735,255,0,Math.PI*2);ctx.clip();cover(ctx,im,125,480,510,510);ctx.restore();ctx.strokeStyle='#fff';ctx.lineWidth=10;ctx.beginPath();ctx.arc(380,735,260,0,Math.PI*2);ctx.stroke();drawAll()};im.src=photo}
-   else drawAll();
+   // LAYER 6: user foreground cutout zone
+   const finish=()=>{
+    // LAYER 7: name yellow information band
+    ctx.fillStyle='#ffd229';ctx.fillRect(0,920,1080,225);
+    ctx.fillStyle='#5c2100';ctx.textAlign='center';ctx.font='900 92px Arial';ctx.fillText(name.slice(0,22),540,1040);
+    ctx.fillStyle='#173916';ctx.font='900 34px Arial';ctx.fillText(role||'RLP युवा साथी',540,1100);
+    line(ctx,52,1118,255,1118,'#20441a',3);line(ctx,825,1118,1028,1118,'#20441a',3);
+    // right badge
+    ctx.fillStyle='#09290f';ctx.roundRect(730,955,295,145,15);ctx.fill();
+    text(ctx,'RLP',878,1004,42,'#ffd229','center');text(ctx,'युवा साथी',878,1055,35,'#eaf1e8','center');
+    // LAYER 8: contact strip
+    ctx.fillStyle='#f3f2ec';ctx.fillRect(0,1145,1080,105);
+    ctx.fillStyle='#21833b';ctx.beginPath();ctx.arc(122,1197,31,0,7);ctx.fill();
+    text(ctx,'☎',122,1211,30,'#fff','center');
+    text(ctx,phone||'आपका मोबाइल नंबर',540,1218,56,'#17351c','center');
+    // LAYER 9: footer party strip
+    ctx.fillStyle='#08230d';ctx.fillRect(0,1250,1080,100);
+    text(ctx,'राष्ट्रीय लोकतांत्रिक पार्टी (RLP)',55,1312,28,'#ffd32a');
+    ctx.fillStyle='#5c765f';ctx.fillRect(590,1272,3,55);
+    text(ctx,'चुनाव चिन्ह - बोतल',630,1312,25,'#f4f4ed');
+    setOut(c.toDataURL('image/png'));setLoading(false);
+   };
+   if(photo){const im=new Image();im.onload=()=>{
+    ctx.save();
+    // soft shadow + full-height foreground crop, intentionally not a circular avatar
+    ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=35;ctx.shadowOffsetY=18;
+    ctx.beginPath();ctx.roundRect(150,355,610,570,45);ctx.clip();fit(ctx,im,150,355,610,570,'center');ctx.restore();
+    ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=3;ctx.strokeRect(150,355,610,570);
+    finish();
+   };im.src=photo}else finish();
   };
-  if(leader){const im=new Image();im.onload=()=>{ctx.save();ctx.beginPath();ctx.arc(790,470,230,0,Math.PI*2);ctx.clip();cover(ctx,im,560,240,460,460);ctx.restore();ctx.strokeStyle='#f7d21f';ctx.lineWidth=10;ctx.beginPath();ctx.arc(790,470,235,0,Math.PI*2);ctx.stroke();drawUser()};im.src=leader}else drawUser();
+  if(leader){const im=new Image();im.onload=()=>{
+   ctx.save();ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=30;ctx.shadowOffsetY=15;
+   ctx.beginPath();ctx.roundRect(590,205,470,720,45);ctx.clip();fit(ctx,im,590,205,470,720,'right');ctx.restore();
+   drawUser();
+  };im.src=leader}else drawUser();
  };
  return <main className="app"><canvas ref={canvas} hidden/>
- <header><div className="brand"><span>RLP</span> Poster Maker <small>युवा साथी</small></div><Sparkles/></header>
- {!selected?<section className="home"><div className="hero"><span>NEW • PREMIUM POSTER STUDIO</span><h1>RLP के लिए <em>Professional</em> Poster बनाइए</h1><p>इस तरह के layered, leader + user photo, bold Hindi typography वाले posters तैयार करें।</p></div><div className="grid">{templates.map(t=><button key={t.id} onClick={()=>setSelected(t)}><div className="mock"><div className="miniLogo">RLP</div><div className="miniText">{t.title}</div><div className="miniCircle"/></div><b>{t.title}</b><small>{t.subtitle}</small></button>)}</div></section>:
- <section className="studio"><button className="back" onClick={()=>{setSelected(null);setOut('')}}><ArrowLeft size={18}/> Templates</button><div className="columns"><div className="panel"><div className="pill">{selected.tag} TEMPLATE</div><h2>{selected.title}</h2><p>नीचे की जानकारी poster में अपने-आप लग जाएगी।</p>
- <label className="upload"><input type="file" accept="image/*" onChange={e=>pick(setPhoto,e.target.files?.[0])}/>{photo?<img src={photo}/>:<><Upload/><b>अपनी फोटो</b><small>मुख्य फोटो अपलोड करें</small></>}</label>
- <label className="upload smallUpload"><input type="file" accept="image/*" onChange={e=>pick(setLeader,e.target.files?.[0])}/>{leader?<img src={leader}/>:<><Users/><b>नेता की फोटो (वैकल्पिक)</b></>}</label>
+ <header><div className="brand"><span>RLP</span> Poster Maker <small>REAL POSTER LAYOUT</small></div><Sparkles/></header>
+ {!selected?<section className="home"><div className="hero"><span>2 PREMIUM LAYERED TEMPLATES</span><h1>अब सिर्फ फोटो नहीं, <em>असल poster जैसी layering</em></h1><p>Header → brush background → leader → user foreground → yellow name band → contact strip → footer.</p></div>
+ <div className="grid">{templates.map(t=><button key={t.id} onClick={()=>setSelected(t)}><div className="mock"><div className="miniHead">RLP</div><div className="miniBrush"/><div className="miniLeader"/><div className="miniUser"/><div className="miniBand">{t.title}</div></div><b>{t.title}</b><small>{t.kicker}</small></button>)}</div></section>:
+ <section className="studio"><button className="back" onClick={()=>{setSelected(null);setOut('')}}><ArrowLeft size={18}/> Templates</button>
+ <div className="columns"><div className="panel"><div className="pill"><Layers size={14}/> 9-LAYER TEMPLATE</div><h2>{selected.title}</h2><p>सबसे अच्छे परिणाम के लिए transparent PNG या पहले से background हटाई हुई फोटो लगाएं।</p>
+ <label className="upload"><input type="file" accept="image/*" onChange={e=>pick(setPhoto,e.target.files?.[0])}/>{photo?<img src={photo}/>:<><Upload/><b>अपनी मुख्य फोटो</b><small>Foreground में आएगी</small></>}</label>
+ <label className="upload smallUpload"><input type="file" accept="image/*" onChange={e=>pick(setLeader,e.target.files?.[0])}/>{leader?<img src={leader}/>:<><Users/><b>Leader की फोटो</b><small>Background layer</small></>}</label>
  <input value={name} onChange={e=>setName(e.target.value)} placeholder="आपका नाम *"/>
  <input value={role} onChange={e=>setRole(e.target.value)} placeholder="पद / पहचान"/>
  <input value={place} onChange={e=>setPlace(e.target.value)} placeholder="गांव / विधानसभा / स्थान"/>
  <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="मोबाइल नंबर"/>
- <button className="generate" onClick={generate} disabled={loading}>{loading?'Poster बन रहा है...':'✨ Generate Premium Poster'}</button></div>
- <div className="preview">{out?<><img src={out}/><a href={out} download={'rlp-'+Date.now()+'.png'}><Download size={18}/> Download PNG</a></>:<div className="empty"><ImagePlus size={54}/><b>Poster Preview</b><span>Generate करने के बाद आपका डिजाइन यहां आएगा</span></div>}</div></div></section>}</main>
+ <button className="generate" onClick={generate} disabled={loading}>{loading?'Layers तैयार हो रही हैं...':'✨ Generate Real-Style Poster'}</button></div>
+ <div className="preview">{out?<><img src={out}/><a href={out} download={'rlp-poster-'+Date.now()+'.png'}><Download size={18}/> Download PNG</a></>:<div className="empty"><ImagePlus size={54}/><b>Layered Poster Preview</b><span>9-layer layout में poster यहां बनेगा</span></div>}</div></div></section>}
+ </main>
 }
