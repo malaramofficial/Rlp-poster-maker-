@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var roleInput: EditText
     private var userBitmap: Bitmap? = null
     private var selected = 0
+    private var photoScale = 1.0f
     private val templates = listOf(
         PosterTemplate("जनसभा","जनता की आवाज • मजबूत राजस्थान",Color.rgb(205,35,35),0),
         PosterTemplate("शुभकामना","आप सभी को हार्दिक शुभकामनाएं",Color.rgb(235,120,25),1),
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
         row.addView(Button(this).apply{text="फोटो चुनें";setOnClickListener{picker.launch("image/*")}},LinearLayout.LayoutParams(0,-2,1f))
         row.addView(Button(this).apply{text="PREVIEW";setOnClickListener{render()}},LinearLayout.LayoutParams(0,-2,1f))
         root.addView(row)
+        root.addView(SeekBar(this).apply { max=100; progress=50; setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener { override fun onProgressChanged(s:SeekBar?,p:Int,f:Boolean){ photoScale=0.6f+p/125f; render() }; override fun onStartTrackingTouch(s:SeekBar?){}; override fun onStopTrackingTouch(s:SeekBar?){} }) })
+        root.addView(TextView(this).apply{text="ऊपर के slider से फोटो का आकार बदलें"})
         root.addView(Button(this).apply{text="FULL HD PNG सेव करें";setOnClickListener{savePoster()}})
         setContentView(scroll);render()
     }
@@ -81,8 +84,9 @@ class MainActivity : AppCompatActivity() {
         val cx=if(t.layout==1) 430f else 540f;val cy=520f
         p.style=Paint.Style.STROKE;p.strokeWidth=16f;p.color=t.accent;c.drawCircle(cx,cy,245f,p);p.style=Paint.Style.FILL
         userBitmap?.let{src->
+            val radius=(232f*photoScale).toInt()
             val clip=Path().apply{addCircle(cx,cy,232f,Path.Direction.CW)}
-            c.save();c.clipPath(clip);c.drawBitmap(src,null,Rect((cx-232).toInt(),(cy-232).toInt(),(cx+232).toInt(),(cy+232).toInt()),null);c.restore()
+            c.save();c.clipPath(clip);c.drawBitmap(src,null,Rect((cx-radius).toInt(),(cy-radius).toInt(),(cx+radius).toInt(),(cy+radius).toInt()),null);c.restore()
         }?:run{p.color=Color.LTGRAY;c.drawCircle(cx,cy,230f,p);p.color=Color.DKGRAY;p.textSize=28f;p.textAlign=Paint.Align.CENTER;c.drawText("आपका फोटो",cx,cy,p)}
 
         val dark=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=Color.rgb(35,35,35);textAlign=Paint.Align.CENTER;typeface=Typeface.DEFAULT_BOLD}
